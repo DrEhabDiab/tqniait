@@ -1,6 +1,6 @@
 #!/bin/bash
 # Backup Checker for CWP Servers
-# Written by Dr. Ehab Diab
+# Written by Dr. Ehab Diab 
 
 backup_directory="/backup"
 users=$(/scripts/list_users | tail -n +3 | awk '{print $1}')
