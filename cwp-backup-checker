@@ -15,40 +15,61 @@ for user in $users; do
 
     # Check daily file backup
     if [ -d "$daily_backup_dir" ]; then
-        latest_daily_backup=$(ls -lt "$daily_backup_dir" | grep "^d" | head -n 1 | awk '{print $6,$7}')
-        if [ "$(date -d "$latest_daily_backup" +%s)" -ge "$(date -d "yesterday" +%s)" ]; then
-            echo -e '\E[37;42m'"\033[1m Daily file backup for $user is up-to-date. \033[0m"
-        else
-            echo -e '\E[37;41m'"\033[1m Daily file backup for $user is not up-to-date. \033[0m"
-        fi
+        echo -e '\E[37;42m'"\033[1m Daily file backup for $user exists. \033[0m"
     else
         echo -e '\E[37;41m'"\033[1m Daily file backup for $user is missing. \033[0m"
     fi
 
     # Check weekly file backup
     if [ -d "$weekly_backup_dir" ]; then
-        latest_weekly_backup=$(ls -lt "$weekly_backup_dir" | grep "^d" | head -n 1 | awk '{print $6,$7}')
-        if [ "$(date -d "$latest_weekly_backup" +%s)" -ge "$(date -d "7 days ago" +%s)" ]; then
-            echo -e '\E[37;42m'"\033[1m Weekly file backup for $user is up-to-date. \033[0m"
-        else
-            echo -e '\E[37;41m'"\033[1m Weekly file backup for $user is not up-to-date. \033[0m"
-        fi
+        echo -e '\E[37;42m'"\033[1m Weekly file backup for $user exists. \033[0m"
     else
         echo -e '\E[37;41m'"\033[1m Weekly file backup for $user is missing. \033[0m"
     fi
 
     # Check monthly file backup
     if [ -d "$monthly_backup_dir" ]; then
-        latest_monthly_backup=$(ls -lt "$monthly_backup_dir" | grep "^d" | head -n 1 | awk '{print $6,$7}')
-        if [ "$(date -d "$latest_monthly_backup" +%s)" -ge "$(date -d "30 days ago" +%s)" ]; then
-            echo -e '\E[37;42m'"\033[1m Monthly file backup for $user is up-to-date. \033[0m"
-        else
-            echo -e '\E[37;41m'"\033[1m Monthly file backup for $user is not up-to-date. \033[0m"
-        fi
+        echo -e '\E[37;42m'"\033[1m Monthly file backup for $user exists. \033[0m"
     else
         echo -e '\E[37;41m'"\033[1m Monthly file backup for $user is missing. \033[0m"
     fi
 
+#    # Check daily file backup
+#    if [ -d "$daily_backup_dir" ]; then
+#        latest_daily_backup=$(ls -lt "$daily_backup_dir" | grep "^d" | head -n 1 | awk '{print $6,$7}')
+#        if [ "$(date -d "$latest_daily_backup" +%s)" -ge "$(date -d "yesterday" +%s)" ]; then
+#            echo -e '\E[37;42m'"\033[1m Daily file backup for $user is up-to-date. \033[0m"
+#        else
+#            echo -e '\E[37;41m'"\033[1m Daily file backup for $user is not up-to-date. \033[0m"
+#        fi
+#    else
+#        echo -e '\E[37;41m'"\033[1m Daily file backup for $user is missing. \033[0m"
+#    fi
+#
+#    # Check weekly file backup
+#    if [ -d "$weekly_backup_dir" ]; then
+#        latest_weekly_backup=$(ls -lt "$weekly_backup_dir" | grep "^d" | head -n 1 | awk '{print $6,$7}')
+#        if [ "$(date -d "$latest_weekly_backup" +%s)" -ge "$(date -d "7 days ago" +%s)" ]; then
+#            echo -e '\E[37;42m'"\033[1m Weekly file backup for $user is up-to-date. \033[0m"
+#        else
+#            echo -e '\E[37;41m'"\033[1m Weekly file backup for $user is not up-to-date. \033[0m"
+#        fi
+#    else
+#        echo -e '\E[37;41m'"\033[1m Weekly file backup for $user is missing. \033[0m"
+#    fi
+#
+#    # Check monthly file backup
+#    if [ -d "$monthly_backup_dir" ]; then
+#        latest_monthly_backup=$(ls -lt "$monthly_backup_dir" | grep "^d" | head -n 1 | awk '{print $6,$7}')
+#        if [ "$(date -d "$latest_monthly_backup" +%s)" -ge "$(date -d "30 days ago" +%s)" ]; then
+#            echo -e '\E[37;42m'"\033[1m Monthly file backup for $user is up-to-date. \033[0m"
+#        else
+#            echo -e '\E[37;41m'"\033[1m Monthly file backup for $user is not up-to-date. \033[0m"
+#        fi
+#    else
+#        echo -e '\E[37;41m'"\033[1m Monthly file backup for $user is missing. \033[0m"
+#    fi
+#
     # Identify and list user's databases
     databases=$(mysql -e 'show databases;' | awk '{print $1}' | grep "^${user}_")
 
