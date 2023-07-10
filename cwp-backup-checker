@@ -1,0 +1,69 @@
+#!/bin/bash
+# Backup Checker for CWP Servers
+# Written by Dr. Ehab Diab
+
+backup_directory="/backup"
+users=$(/scripts/list_users | tail -n +3 | awk '{print $1}')
+
+for user in $users; do
+    echo -e '\E[37;44m'"\033[1m Checking backups for user: $user \033[0m"
+    echo " "
+    # Check file backups
+    daily_backup_dir="$backup_directory/daily/$user"
+    weekly_backup_dir="$backup_directory/weekly/$user"
+    monthly_backup_dir="$backup_directory/monthly/$user"
+
+    # Check daily file backup
+    if [ -d "$daily_backup_dir" ]; then
+        echo -e '\E[37;42m'"\033[1m Daily file backup for $user exists. \033[0m"
+    else
+        echo -e '\E[37;41m'"\033[1m Daily file backup for $user is missing. \033[0m"
+    fi
+
+    # Check weekly file backup
+    if [ -d "$weekly_backup_dir" ]; then
+        echo -e '\E[37;42m'"\033[1m Weekly file backup for $user exists. \033[0m"
+    else
+        echo -e '\E[37;41m'"\033[1m Weekly file backup for $user is missing. \033[0m"
+    fi
+
+    # Check monthly file backup
+    if [ -d "$monthly_backup_dir" ]; then
+        echo -e '\E[37;42m'"\033[1m Monthly file backup for $user exists. \033[0m"
+    else
+        echo -e '\E[37;41m'"\033[1m Monthly file backup for $user is missing. \033[0m"
+    fi
+
+    # Identify and list user's databases
+    databases=$(mysql -e 'show databases;' | awk '{print $1}' | grep "^${user}_")
+
+    for database in $databases; do
+        daily_mysql_backup="$backup_directory/mysql/daily/$database.sql"
+        weekly_mysql_backup="$backup_directory/mysql/weekly/$database.sql"
+        monthly_mysql_backup="$backup_directory/mysql/monthly/$database.sql"
+
+        # Check daily MySQL backup
+        if [ -f "$daily_mysql_backup" ]; then
+            echo -e '\E[37;42m'"\033[1m Daily MySQL backup for database $database exists. \033[0m"
+        else
+            echo -e '\E[37;41m'"\033[1m Daily MySQL backup for database $database is missing. \033[0m"
+        fi
+
+        # Check weekly MySQL backup
+        if [ -f "$weekly_mysql_backup" ]; then
+            echo -e '\E[37;42m'"\033[1m Weekly MySQL backup for database $database exists. \033[0m"
+        else
+            echo -e '\E[37;41m'"\033[1m Weekly MySQL backup for database $database is missing. \033[0m"
+        fi
+
+        # Check monthly MySQL backup
+        if [ -f "$monthly_mysql_backup" ]; then
+            echo -e '\E[37;42m'"\033[1m Monthly MySQL backup for database $database exists. \033[0m"
+        else
+            echo -e '\E[37;41m'"\033[1m Monthly MySQL backup for database $database is missing. \033[0m"
+        fi
+    done
+
+    echo
+    echo
+done
