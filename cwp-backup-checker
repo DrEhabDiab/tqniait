@@ -15,21 +15,36 @@ for user in $users; do
 
     # Check daily file backup
     if [ -d "$daily_backup_dir" ]; then
-        echo -e '\E[37;42m'"\033[1m Daily file backup for $user exists. \033[0m"
+        latest_daily_backup=$(ls -lt "$daily_backup_dir" | grep "^d" | head -n 1 | awk '{print $6,$7}')
+        if [ "$(date -d "$latest_daily_backup" +%s)" -ge "$(date -d "yesterday" +%s)" ]; then
+            echo -e '\E[37;42m'"\033[1m Daily file backup for $user is up-to-date. \033[0m"
+        else
+            echo -e '\E[37;41m'"\033[1m Daily file backup for $user is not up-to-date. \033[0m"
+        fi
     else
         echo -e '\E[37;41m'"\033[1m Daily file backup for $user is missing. \033[0m"
     fi
 
     # Check weekly file backup
     if [ -d "$weekly_backup_dir" ]; then
-        echo -e '\E[37;42m'"\033[1m Weekly file backup for $user exists. \033[0m"
+        latest_weekly_backup=$(ls -lt "$weekly_backup_dir" | grep "^d" | head -n 1 | awk '{print $6,$7}')
+        if [ "$(date -d "$latest_weekly_backup" +%s)" -ge "$(date -d "7 days ago" +%s)" ]; then
+            echo -e '\E[37;42m'"\033[1m Weekly file backup for $user is up-to-date. \033[0m"
+        else
+            echo -e '\E[37;41m'"\033[1m Weekly file backup for $user is not up-to-date. \033[0m"
+        fi
     else
         echo -e '\E[37;41m'"\033[1m Weekly file backup for $user is missing. \033[0m"
     fi
 
     # Check monthly file backup
     if [ -d "$monthly_backup_dir" ]; then
-        echo -e '\E[37;42m'"\033[1m Monthly file backup for $user exists. \033[0m"
+        latest_monthly_backup=$(ls -lt "$monthly_backup_dir" | grep "^d" | head -n 1 | awk '{print $6,$7}')
+        if [ "$(date -d "$latest_monthly_backup" +%s)" -ge "$(date -d "30 days ago" +%s)" ]; then
+            echo -e '\E[37;42m'"\033[1m Monthly file backup for $user is up-to-date. \033[0m"
+        else
+            echo -e '\E[37;41m'"\033[1m Monthly file backup for $user is not up-to-date. \033[0m"
+        fi
     else
         echo -e '\E[37;41m'"\033[1m Monthly file backup for $user is missing. \033[0m"
     fi
@@ -44,21 +59,36 @@ for user in $users; do
 
         # Check daily MySQL backup
         if [ -f "$daily_mysql_backup" ]; then
-            echo -e '\E[37;42m'"\033[1m Daily MySQL backup for database $database exists. \033[0m"
+            latest_daily_mysql_backup=$(ls -lt "$daily_mysql_backup" | grep "^-" | head -n 1 | awk '{print $6,$7}')
+            if [ "$(date -d "$latest_daily_mysql_backup" +%s)" -ge "$(date -d "yesterday" +%s)" ]; then
+                echo -e '\E[37;42m'"\033[1m Daily MySQL backup for database $database is up-to-date. \033[0m"
+            else
+                echo -e '\E[37;41m'"\033[1m Daily MySQL backup for database $database is not up-to-date. \033[0m"
+            fi
         else
             echo -e '\E[37;41m'"\033[1m Daily MySQL backup for database $database is missing. \033[0m"
         fi
 
         # Check weekly MySQL backup
         if [ -f "$weekly_mysql_backup" ]; then
-            echo -e '\E[37;42m'"\033[1m Weekly MySQL backup for database $database exists. \033[0m"
+            latest_weekly_mysql_backup=$(ls -lt "$weekly_mysql_backup" | grep "^-" | head -n 1 | awk '{print $6,$7}')
+            if [ "$(date -d "$latest_weekly_mysql_backup" +%s)" -ge "$(date -d "7 days ago" +%s)" ]; then
+                echo -e '\E[37;42m'"\033[1m Weekly MySQL backup for database $database is up-to-date. \033[0m"
+            else
+                echo -e '\E[37;41m'"\033[1m Weekly MySQL backup for database $database is not up-to-date. \033[0m"
+            fi
         else
             echo -e '\E[37;41m'"\033[1m Weekly MySQL backup for database $database is missing. \033[0m"
         fi
 
         # Check monthly MySQL backup
         if [ -f "$monthly_mysql_backup" ]; then
-            echo -e '\E[37;42m'"\033[1m Monthly MySQL backup for database $database exists. \033[0m"
+            latest_monthly_mysql_backup=$(ls -lt "$monthly_mysql_backup" | grep "^-" | head -n 1 | awk '{print $6,$7}')
+            if [ "$(date -d "$latest_monthly_mysql_backup" +%s)" -ge "$(date -d "30 days ago" +%s)" ]; then
+                echo -e '\E[37;42m'"\033[1m Monthly MySQL backup for database $database is up-to-date. \033[0m"
+            else
+                echo -e '\E[37;41m'"\033[1m Monthly MySQL backup for database $database is not up-to-date. \033[0m"
+            fi
         else
             echo -e '\E[37;41m'"\033[1m Monthly MySQL backup for database $database is missing. \033[0m"
         fi
