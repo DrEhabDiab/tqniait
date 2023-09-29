@@ -1,0 +1,58 @@
+#!/bin/bash
+# Dialog for changing email password logins
+# TqniaIT | www.tqniait.com
+# Written by Dr. Ehab Diab
+# ehab@ehabdiab.com
+
+vm_config_dir="/etc/pve/qemu-server/"
+ct_config_dir="/etc/pve/lxc/"
+total_vm_memory=0
+total_ct_memory=0
+
+# Function to get hostname from VM or CT configuration file
+get_hostname() {
+    local config_file="$1"
+    local hostname_key="$2"
+    local hostname=$(grep -i "$hostname_key" "$config_file" | awk '{print $2}')
+    if [ -z "$hostname" ]; then
+        echo "No Hostname"
+    else
+        echo "$hostname"
+    fi
+}
+
+# Loop through VM configuration files
+for vm_config_file in "$vm_config_dir"*.conf; do
+    if [ -f "$vm_config_file" ]; then
+        vmid=$(basename "$vm_config_file" .conf)
+        memory_allocation=$(grep -i 'memory' "$vm_config_file" | awk '{print $2}')
+        vm_hostname=$(get_hostname "$vm_config_file" 'name:')
+
+        if [ -n "$memory_allocation" ]; then
+            echo "VM $vmid - $vm_hostname: $memory_allocation MB"
+            total_vm_memory=$((total_vm_memory + memory_allocation))
+        fi
+    fi
+done
+
+# Loop through CT configuration files
+for ct_config_file in "$ct_config_dir"*.conf; do
+    if [ -f "$ct_config_file" ]; then
+        ctid=$(basename "$ct_config_file" .conf)
+        memory_allocation=$(grep -i 'memory' "$ct_config_file" | awk '{print $2}')
+        ct_hostname=$(get_hostname "$ct_config_file" 'hostname:')
+
+        if [ -n "$memory_allocation" ]; then
+            echo "CT $ctid - $ct_hostname: $memory_allocation MB"
+            total_ct_memory=$((total_ct_memory + memory_allocation))
+        fi
+    fi
+done
+
+grand_total_mb=$((total_vm_memory + total_ct_memory))
+grand_total_gb=$(awk "BEGIN {printf \"%.2f\", $grand_total_mb / 1024}")
+echo "Total Memory for VMs: ${total_vm_memory} MB"
+echo "Total Memory for CTs: ${total_ct_memory} MB"
+echo "Grand Total Memory: ${grand_total_mb} MB (${grand_total_gb} GB)"
+
+exit 0
