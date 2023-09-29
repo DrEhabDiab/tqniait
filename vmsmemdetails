@@ -45,11 +45,6 @@ get_status() {
         status=$(qm status "$id" | grep "status:" | awk '{print $2}')
     else
         status=$(pct list |grep "$id"| awk '{print $2}')
-        #if systemctl is-active "pve-container@$id" &>/dev/null; then
-        #    status="running"
-        #else
-        #    status="stopped"
-        #fi
     fi
 
     if [ -n "$status" ]; then
