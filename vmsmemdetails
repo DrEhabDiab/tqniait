@@ -1,8 +1,22 @@
 #!/bin/bash
+# Script Name: VM and CT Memory Details
 # Script to show detailed memory usage for both VMs and CTs on PROXMOX nodes
 # TqniaIT | www.tqniait.com
 # Written by Dr. Ehab Diab
 # ehab@ehabdiab.com
+#This Bash script provides an overview of memory allocations for Virtual Machines (VMs) and Container-based Virtualization (CT) on a Proxmox Virtual Environment (PVE) host. It helps system administrators and users quickly understand the memory consumption of their virtualized environments.
+
+#Features:
+#Retrieves memory allocation details for both VMs and CTs.
+#Displays the hostname, status (if available), and memory allocation for each VM and CT.
+#Calculates the total memory consumption for VMs, CTs, and provides a grand total in both MB and GB.
+#Supports determining the status of VMs using the "qm" command for VMs and CTs using the "pct list" command for CTs.
+#Outputs results in a single, readable format.
+
+#Requirements:
+#Proxmox Virtual Environment (PVE) host with "qm" and "pct" commands available.
+#Appropriate permissions to access VM and CT configuration files and retrieve their status.
+
 
 vm_config_dir="/etc/pve/qemu-server/"
 ct_config_dir="/etc/pve/lxc/"
@@ -21,15 +35,40 @@ get_hostname() {
     fi
 }
 
+# Function to get the status of a VM or CT
+get_status() {
+    local id="$1"
+    local type="$2"
+    local status
+
+    if [ "$type" = "VM" ]; then
+        status=$(qm status "$id" | grep "status:" | awk '{print $2}')
+    else
+        status=$(pct list |grep "$id"| awk '{print $2}')
+        #if systemctl is-active "pve-container@$id" &>/dev/null; then
+        #    status="running"
+        #else
+        #    status="stopped"
+        #fi
+    fi
+
+    if [ -n "$status" ]; then
+        echo "$status"
+    #else
+    #    echo "N/A"
+    fi
+}
+
 # Loop through VM configuration files
 for vm_config_file in "$vm_config_dir"*.conf; do
     if [ -f "$vm_config_file" ]; then
         vmid=$(basename "$vm_config_file" .conf)
         memory_allocation=$(grep -i 'memory' "$vm_config_file" | awk '{print $2}')
         vm_hostname=$(get_hostname "$vm_config_file" 'name:')
+        vm_status=$(get_status "$vmid" "VM")
 
         if [ -n "$memory_allocation" ]; then
-            echo "VM $vmid - $vm_hostname: $memory_allocation MB"
+            echo "VM $vmid - $vm_hostname - $vm_status: $memory_allocation MB"
             total_vm_memory=$((total_vm_memory + memory_allocation))
         fi
     fi
@@ -41,9 +80,10 @@ for ct_config_file in "$ct_config_dir"*.conf; do
         ctid=$(basename "$ct_config_file" .conf)
         memory_allocation=$(grep -i 'memory' "$ct_config_file" | awk '{print $2}')
         ct_hostname=$(get_hostname "$ct_config_file" 'hostname:')
+        ct_status=$(get_status "$ctid" "CT")
 
         if [ -n "$memory_allocation" ]; then
-            echo "CT $ctid - $ct_hostname: $memory_allocation MB"
+            echo "CT $ctid - $ct_hostname - $ct_status: $memory_allocation MB"
             total_ct_memory=$((total_ct_memory + memory_allocation))
         fi
     fi
