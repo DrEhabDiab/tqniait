@@ -1,5 +1,5 @@
 #!/bin/bash
-# Dialog for changing email password logins
+# Script to show detailed memory usage for both VMs and CTs on PROXMOX nodes
 # TqniaIT | www.tqniait.com
 # Written by Dr. Ehab Diab
 # ehab@ehabdiab.com
