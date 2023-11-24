@@ -1,0 +1,102 @@
+#!/bin/bash
+#This script is written by Dr. Ehab Diab
+# TqniaIT | www.tqniait.com
+# This Bash script provides various email statistics for a server, focusing on Exim mail logs.
+# It's designed to help server administrators analyze email sending patterns based on different criteria.
+
+WHITE='\033[01;1;37m'
+GREEN='\033[01;1;32m'
+RESET='\033[0m'
+
+clear
+
+# Get the list of domains
+domain_list=$(awk '{print $1}' /etc/trueuserdomains | cut -d: -f1)
+
+echo -e "${GREEN}Choose an option:${RESET}"
+echo " "
+echo -e "${WHITE}1. Statistics for Single domain${RESET}"
+echo -e "${WHITE}2. Statistics for ALL server's domains${RESET}"
+echo -e "${WHITE}3. Detailed statistics for one domain per each hour of the day${RESET}"
+echo -e "${WHITE}4. Detailed statistics for all domains per each hour of the day${RESET}"
+echo " "
+read -p "$(echo -e "${WHITE}Enter the option number: ${RESET}")" option
+echo " "
+
+if [ "$option" == "1" ]; then
+    read -p "$(echo -e "${WHITE}Enter search data (Domain DATE Hour, e.g., example.com 2023-11-23 13): ${RESET}")" searchData
+    domain=$(echo "$searchData" | awk '{print $1}')
+    date=$(echo "$searchData" | awk '{print $2}')
+    hour=$(echo "$searchData" | awk '{print $3}')
+
+    log_file="/var/log/exim_mainlog"
+    echo " "
+
+    if [ "$hour" == "00" ]; then
+        count=$(grep "$date" "$log_file" | grep "Sender identification" | grep "D=$domain" | wc -l)
+    else
+        count=$(grep "$date" "$log_file" | grep "Sender identification" | grep "D=$domain" | grep "$date $hour:" | wc -l)
+    fi
+    echo "Number of emails sent from $domain on $date between $hour:00 and $hour:59: $count"
+
+elif [ "$option" == "2" ]; then
+    echo -e "${WHITE}Getting statistics for ALL server's domains.${RESET}"
+    domain_list=$(awk '{print $1}' /etc/trueuserdomains | cut -d: -f1)
+    echo " "
+
+    read -p "$(echo -e "${WHITE}Enter search data (DATE Hour, e.g., 2023-11-23 13): ${RESET}")" searchData
+
+    date=$(echo "$searchData" | awk '{print $1}')
+    hour=$(echo "$searchData" | awk '{print $2}')
+
+    log_file="/var/log/exim_mainlog"
+    echo " "
+
+    for domain in $domain_list; do
+        if [ "$hour" == "00" ]; then
+            count=$(grep "$date" "$log_file" | grep "Sender identification" | grep "D=$domain" | wc -l)
+        else
+            count=$(grep "$date" "$log_file" | grep "Sender identification" | grep "D=$domain" | grep "$date $hour:" | wc -l)
+        fi
+        echo "Number of emails sent from $domain on $date between $hour:00 and $hour:59: $count"
+    done
+
+elif [ "$option" == "3" ]; then
+    read -p "$(echo -e "${WHITE}Enter search data (Domain DATE, e.g., example.com 2023-11-23): ${RESET}")" searchData
+    domain=$(echo "$searchData" | awk '{print $1}')
+    date=$(echo "$searchData" | awk '{print $2}')
+
+    log_file="/var/log/exim_mainlog"
+    total_count=0
+    echo " "
+
+    for hour in {00..23}; do
+        count=$(grep "$date" "$log_file" | grep "Sender identification" | grep "D=$domain" | grep "$date $hour:" | wc -l)
+        total_count=$((total_count + count))
+        echo "From $hour:00 to $hour:59 : $count messages"
+    done
+
+        echo " "
+        echo -e "${WHITE}Total messages sent from $domain on $date: $total_count${RESET}"
+
+
+elif [ "$option" == "4" ]; then
+    read -p "$(echo -e "${WHITE}Enter search data (DATE, e.g., 2023-11-23): ${RESET}")" searchData
+    date=$(echo "$searchData" | awk '{print $1}')
+
+    log_file="/var/log/exim_mainlog"
+    echo " "
+
+    for hour in {00..23}; do
+        total_count=0
+        for domain in $domain_list; do
+            count=$(grep "$date" "$log_file" | grep "Sender identification" | grep "D=$domain" | grep "$date $hour:" | wc -l)
+            total_count=$((total_count + count))
+        done
+        echo -e "${WHITE}For $date from $hour:00 to $hour:59 across all domains: $total_count messages${RESET}"
+    done
+
+else
+    echo "Invalid option. Exiting."
+    exit 1
+fi
