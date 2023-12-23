@@ -1,0 +1,92 @@
+#!/bin/bash
+#
+# Script Name: External Backup Script
+# Description: Bash script for external backups on specific time frames
+# Author: Dr. Ehab Diab
+# Website: https://www.indexsrv.com
+# Contact: ehab@ehabdiab.com
+#
+# Usage: Add this script to crontab for scheduled backups.
+# Example: 0 */6 * * * /usr/bin/screen -dmS EXTERNALBACKUP /bin/externalbackup
+#
+# Dependencies: rsync, mysqldump, mail, screen
+#
+# Notes:
+# - Adjust the script variables as needed.
+# - Ensure that necessary permissions are set for script execution.
+# - Review the log file for detailed backup reports.
+#
+# Backup script variables
+LOG_FILE="/var/log/backup_script.log"
+BASE_BACKUP_DIR="/mnt/backup-server"
+EMAIL_TO="admin@indexsrv.com"
+EMAIL_SUBJECT="IndexSrv External Backup Report"
+
+# Function to log messages
+log() {
+    echo "$(date "+%Y-%m-%d %H:%M:%S"): $1" >> "$LOG_FILE"
+}
+
+# Function to send email report
+send_email_report() {
+    cat "$LOG_FILE" | mail -s "$EMAIL_SUBJECT" "$EMAIL_TO"
+}
+
+# Function to perform backup for a given user
+perform_user_backup() {
+    local USER=$1
+    local BACKUP_COPY=$2
+    log "Backing up files for user: $USER - Copy: $BACKUP_COPY"
+    nice -n 19 rsync -arzopug "/home/$USER/" "$BASE_BACKUP_DIR/$BACKUP_COPY/files/$USER/" >> "$LOG_FILE" 2>&1
+}
+
+# Function to perform MySQL database backup
+perform_mysql_backup() {
+    local BACKUP_COPY=$1
+    log "Backing up MySQL databases - Copy: $BACKUP_COPY"
+    local SQL=$(mysql -e 'show databases;' | awk '{print $1}' | grep '_' | grep -vE 'information_schema|performance_schema')
+    for DB in $SQL; do
+        log "Backing up database: $DB"
+        nice -n 19 mysqldump $DB > "$BASE_BACKUP_DIR/$BACKUP_COPY/databases/$DB.sql" >> "$LOG_FILE" 2>&1
+    done
+    log "Backup process completed."
+}
+
+# Function to perform backup of MySQL databases full directory
+perform_mysql_dir_backup() {
+    local BACKUP_COPY=$1
+    log "Backing up MySQL databases Full Directory - Copy: $BACKUP_COPY"
+    nice -n 19 rsync -arzopug "/var/lib/mysql" "$BASE_BACKUP_DIR/$BACKUP_COPY/sqldir" >> "$LOG_FILE" 2>&1
+    log "Backup process completed."
+}
+
+# Determine which backup copy to perform based on the current hour
+current_hour=$(date "+%H")
+
+# Determine the backup copy based on the current time frame
+if ((current_hour >= 0 && current_hour < 6)); then
+    BACKUP_COPY="First"
+elif ((current_hour >= 6 && current_hour < 12)); then
+    BACKUP_COPY="Second"
+elif ((current_hour >= 12 && current_hour < 16)); then
+    BACKUP_COPY="Third"
+else
+    BACKUP_COPY="Fourth"
+fi
+
+# Main backup process
+log "Starting backup process for $BACKUP_COPY copy at $current_hour:00..."
+
+# Loop through cPanel users and perform backup for the specified copy
+while IFS= read -r USER; do
+    perform_user_backup "$USER" "$BACKUP_COPY"
+done < <(cat /etc/domainusers | awk '{print $1}' | cut -d: -f1)
+
+perform_mysql_backup "$BACKUP_COPY"
+perform_mysql_dir_backup "$BACKUP_COPY"
+
+# Send email report
+send_email_report
+
+# Clean up old log files (adjust the number of days as needed)
+find /var/log/ -name "backup_script.log*" -type f -mtime +38 -delete
