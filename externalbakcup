@@ -47,7 +47,7 @@ perform_mysql_backup() {
     local SQL=$(mysql -e 'show databases;' | awk '{print $1}' | grep '_' | grep -vE 'information_schema|performance_schema')
     for DB in $SQL; do
         log "Backing up database: $DB"
-        nice -n 19 mysqldump $DB > "$BASE_BACKUP_DIR/$BACKUP_COPY/databases/$DB.sql" >> "$LOG_FILE" 2>&1
+        nice -n 19 mysqldump --max_allowed_packet=512M $DB > "$BASE_BACKUP_DIR/$BACKUP_COPY/databases/$DB.sql" 2>> "$LOG_FILE"
     done
     log "Backup process completed."
 }
