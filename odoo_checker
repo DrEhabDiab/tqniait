@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Log file
+LOGFILE="/var/log/odoo_monitor2.log"
+
+# Function to log messages
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> $LOGFILE
+}
+
+# Function to check if the URL is up
+check_url() {
+    local url="$1"
+    local service="$2"
+    local status=$(curl -o /dev/null -s -w '%{http_code}\n' -L "$url")
+
+    if [ $status -eq 200 ]; then
+        log_message "URL $url for service $service is up."
+        return 0
+    else
+        log_message "URL $url for service $service is down. Status code: $status"
+        return 1
+    fi
+}
+
+# Function to restart the service
+restart_service() {
+    local service="$1"
+    log_message "Restarting service $service."
+    systemctl restart $service
+    if [ $? -eq 0 ]; then
+        log_message "Service $service restarted successfully."
+    else
+        log_message "Failed to restart service $service."
+        # send_email "Failed to restart service $service."
+    fi
+}
+
+# Main logic
+log_message "Starting Odoo monitoring script."
+
+# Read service and URL pairs from the file
+while IFS=: read -r service url; do
+    if ! check_url "$url" "$service"; then
+        restart_service "$service"
+    fi
+done < /etc/odoo_service_check_list
+
+log_message "Monitoring script completed."
