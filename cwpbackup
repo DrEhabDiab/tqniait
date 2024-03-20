@@ -1,0 +1,81 @@
+#!/bin/bash
+#
+# Script Name: CWPBackup
+# Description: Bash script for automated backups of CentOS Web Panel (CWP) server data.
+# Author: Dr. Ehab Diab
+# Website: https://www.indexsrv.com
+# Contact: ehab@ehabdiab.com
+#
+# Usage: Add this script to crontab for scheduled backups.
+# Example: 0 2 * * * /usr/bin/screen -dmS CWPSERVERBACKUP /bin/cwpbackup
+#
+# Dependencies: rsync, mysqldump, screen
+#
+# Notes:
+# - Adjust the script variables as needed.
+# - Ensure that necessary permissions are set for script execution.
+# - Review the log file for detailed backup reports.
+#
+
+
+# Backup destination directory
+BACKUP_DIR="/backup"
+
+# Get today's day of the week (0 for Sunday, 1 for Monday, ..., 6 for Saturday)
+TODAYS_DAY=$(date +%u)
+
+# Get today's day of the month
+TODAYS_DATE=$(date +%d)
+
+# List of users
+USERNAMES=$(sudo /scripts/list_users | grep -vE '#|\|' | awk '{print $1}')
+
+# Backup user files
+backup_user_files() {
+    local backup_type=$1
+    local username=$2
+    local backup_path="$BACKUP_DIR/$backup_type/$username/public_html"
+    mkdir -p "$backup_path"
+    rsync -avzg "/home/$username/public_html/" "$backup_path"
+}
+
+# Backup MySQL/MariaDB databases
+backup_mysql_databases() {
+    local backup_type=$1
+    local username=$2
+    local databases=$(mysql -e 'show databases;' | awk '{print $1}' | grep "_" | grep -vE 'information_schema|performance_schema')
+
+    for db_name in $databases
+    do
+        mysqldump $db_name > "$BACKUP_DIR/mysql/$backup_type/$db_name.sql"
+    done
+}
+
+# Daily backup for user files and databases
+if [ $TODAYS_DAY -ne 7 ]; then
+    for username in $USERNAMES
+    do
+        backup_user_files "daily" "$username"
+        backup_mysql_databases "daily" "$username"
+    done
+fi
+
+# Weekly backup for user files and databases
+if [ $TODAYS_DAY -eq 7 ]; then
+    for username in $USERNAMES
+    do
+        backup_user_files "weekly" "$username"
+        backup_mysql_databases "weekly" "$username"
+    done
+fi
+
+# Monthly backup for user files and databases
+if [ $TODAYS_DATE -eq 01 ]; then
+    for username in $USERNAMES
+    do
+        backup_user_files "monthly" "$username"
+        backup_mysql_databases "monthly" "$username"
+    done
+fi
+
+echo "Backup completed."
